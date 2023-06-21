@@ -10672,7 +10672,7 @@ header.masthead {
   margin-bottom: 3rem;
   padding-top: calc(8rem + 57px);
   padding-bottom: 8rem;
-  background: no-repeat center center;
+  background: no-repeat bottom center;
   background-color: #6c757d;
   background-size: cover;
   background-attachment: scroll;
@@ -10735,8 +10735,8 @@ header.masthead .post-heading .meta a {
 }
 @media (min-width: 992px) {
   header.masthead {
-    padding-top: 12.5rem;
-    padding-bottom: 12.5rem;
+    padding-top: 7.5rem;
+    padding-bottom: 6.5rem;
   }
   header.masthead .page-heading h1, header.masthead .page-heading .h1,
   header.masthead .site-heading h1,
