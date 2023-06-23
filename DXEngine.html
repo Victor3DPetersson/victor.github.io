@@ -52,28 +52,92 @@
         <div class="container px-4 px-lg-5">
             <div class="row gx-4 gx-lg-5 justify-content-center">
                 <div class="col-md-10 col-lg-8 col-xl-7">
-                    <p>Never in all their history have men been able truly to conceive of the world as one: a single sphere, a globe, having the qualities of a globe, a round earth in which all the directions eventually meet, in which there is no center because every point, or none, is center — an equal earth which all men occupy as equals. The airman's earth, if free men make it, will be truly round: a globe in practice, not in theory.</p>
-                    <p>Science cuts two ways, of course; its products can be used for both good and evil. But there's no turning back from science. The early warnings about technological dangers also come from science.</p>
-                    <p>What was most significant about the lunar voyage was not that man set foot on the Moon but that they set eye on the earth.</p>
-                    <p>A Chinese tale tells of some men sent to harm a young girl who, upon seeing her beauty, become her protectors rather than her violators. That's how I felt seeing the Earth for the first time. I could not help but love and cherish her.</p>
-                    <p>For those who have seen the Earth from space, and for the hundreds and perhaps thousands more who will, the experience most certainly changes your perspective. The things that we share in our world are far more valuable than those which divide us.</p>
-                    <h2 class="section-heading">The Final Frontier</h2>
-                    <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-                    <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-                    <blockquote class="blockquote">The dreams of yesterday are the hopes of today and the reality of tomorrow. Science has not yet mastered prophecy. We predict too much for the next year and yet far too little for the next ten.</blockquote>
-                    <p>Spaceflights cannot be stopped. This is not the work of any one man or even a group of men. It is a historical process which mankind is carrying out in accordance with the natural laws of human development.</p>
-                    <h2 class="section-heading">Reaching for the Stars</h2>
-                    <p>As we got further and further away, it [the Earth] diminished in size. Finally it shrank to the size of a marble, the most beautiful you can imagine. That beautiful, warm, living object looked so fragile, so delicate, that if you touched it with a finger it would crumble and fall apart. Seeing this has to change a man.</p>
-                    <a href="#!"><img class="img-fluid" src="assets/img/post-sample-image.jpg" alt="..." /></a>
-                    <span class="caption text-muted">To go places and do things that have never been done before – that’s what living is all about.</span>
-                    <p>Space, the final frontier. These are the voyages of the Starship Enterprise. Its five-year mission: to explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has gone before.</p>
-                    <p>As I stand out here in the wonders of the unknown at Hadley, I sort of realize there’s a fundamental truth to our nature, Man must explore, and this is exploration at its greatest.</p>
-                    <p>
+                    <p>Here is a list of the largest features I implemented that can be found in here:</p>
+                    <ul>
+                        <li><a href="#GI">Global indirect illumniation with spherical harmonics</a href></li>
+                        <li><a href="#Particles">Shadow casting mesh particles</a href></li>
+                        <li><a href="#Shadows">Shadow atlassing with dynamic and static shadows</a href></li>
+                        <li><a href="#Triple">Triple buffered rendering</a href></li>
+                        <li>GPU driven clustered rendering acceleration structure</li>
+                        <li>Render pipeline to multiple render views</li>
+                        <li>Instanced Rendering</li>
+                    </ul> 
+                    <p>This engine was written at The Game Assembly. It was written to be useable by other disciplines and for game projects. So there are a lot of things I wish I could have improved.
+                        I have put up all the relevant code on
+                        <a href="https://github.com/Victor3DPetersson/TGA_CodeShowcase">Github</a> if you want to have a look =).
+                    </p> 
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="GI">Global indirect illumination with spherical harmonics</h3>
+
+                    <a><video class="img-fluid" src="assets/video/GlobalIlluminationSummary.mp4" autoplay controls loop></a>
+                    <p>As an artist I have always enjoyed the lighting part of the art process. So for my last project at The Game Assembly. I wanted to push the real time lighting in my groups Engine to be closer to other real-time game engines. Specifically I wanted to look at Global Illumination and to mimic how it is made for games. This was to push my knowledge of the lighting pipeline more in depth and also to understand more advanced lighting techniques.</p>
+                    
+                    <!-- Sub Header-->
+                    <h5>How it works</h5>
+                    <p>This illumination model builds on using grids of Spherical Harmonics for indirect lighting and Reflection Probes for the specular portion of the lighting model.</p>
+                    <p>When generating the grids spherical harmonics I do a capture of the scene from each grid point. The scene I capture is the level with every light affecting the scene casting shadows. I then use this cubemap to generate a 3rd order spherical harmonic that I save in to a array of spherical harmonic sets. For the reflection probes I instead use the same cubemap approach, but I use the generated cubemap to create a scattering lookup table with a compute shader. </p>
+                    <p>When using the sets to light the scene I collect each grid that affects the pixel most (this is done when filling my cluster structure on the GPU). And then I trilinearly interpolate the influence in the grid with the pixels world position that I sample from the GBuffer. I use the spheircal harmonic contribution as the ambient light factor of the scene, and then I add each light on top of the calculations.</p>
+                    <!-- Sub Header-->
+                    <h5>What I would have improved</h5>
+                    <p>When lighting the scene that is used for the spherical harmonic cubemap capture, I could have pushed the lighting and add some proper raytracing lighting model that I could have captured. Right now the captured scene is just a capture of how the game looks, so the illumination is not so indirect other than capturing self illuminating objects. Also there is no cubemap or skylight contribution as I did not have time to implement either of those methods.</p>
+                    
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Particles">Shadow casting mesh particles</h3>
+
+                    <a><video class="img-fluid" src="assets/video/MeshParticles1.mp4" autoplay controls loop></a>
+                    <!-- Sub Header-->
+                    <h5>How it works</h5>
+                    <p>The game thread creates particle commands that uses ID's so that the particle manager uses to map the system to a command. Each command will create an emitter instance that references a system. When it comes to updating the emitters I reuse as much data as possible, so it is basically an extension of my isntancing system but over localized clump data.</p>
+                    <p>Each system holds an array of instance data for all the particles. They get calculated at loading time on how many particles each emitter can have as a max. The only difference for my system if it is a mesh or not is a bool that is checked. So when rendering I only need to fetch the correct data from the correct manager depending on if the particle is a mesh or if it is a billboard effect. All this data is serialized inside of the system. So the data the Game thread have to send is tiny to the GPU. It looks like this:<br>
+                        <code>
+                        ParticleID particleSystem; //A GUID<br>
+                        v3f offset;<br>
+                        bool isPlaying = true;<br>
+                        bool shouldSpawn = true;<br>
+                    </code></p>
+                    <!-- Sub Header-->
+                    <h5>What I would have improved</h5>
+                    <p>If I did have the time I would have liked to move the simulations to a compute shader or seperate out all the updating of the systems to their own threads on the CPU.</p>
+
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Shadows">Shadow atlassing with dynamic and static shadows</h3>
+
+                    <a><img class="img-fluid" src="assets/img/ShadowAtlas-1536x1536.png"></a>
+                    <!-- Sub Header-->
+                    <h5>How it works</h5>
+                    <p>For all the shadows in the two last games my group made at The Game Assembly I wrote this shadow atlassing system. It uses one 8192x8192 shadow atlas. The top half is for all the dynamic lights, and the bottom part is for all the static lights.</p>
+                    <p>On the CPU I check for each shadow casting dynamic lights if they contribute to lighting anything in the frustum. If they do I render a shadow-map for them. For the static lights I instead when the level is loaded, I render each static light and put them in to this atlas with a book keeping system. This system will calculate the optimal size for each light and how much they will contribute to the final scene.</p>
+                    <p>The benefit of using a shadow atlas is that to be able to render a shadow on the GPU I do not need so much information. The only information I need for a light is, the size of the light (in the atlas), and its top left x and y coordinate. And all this can be packed in to one uint32. This makes it very easy to book-keep the shadow map on the GPU and match a light to its shadows.</p>
+
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Triple">Triple buffered rendering</h3>
+
+                    <a><img class="img-fluid" src="assets/img/tripleBufferBreakdown-1024x765.png"></a>
+                    <!-- Sub Header-->
+                    <h5>How it works</h5>
+                    <p>.</p>
+                    <!--<p>
                         Placeholder text by
                         <a href="http://spaceipsum.com/">Space Ipsum</a>
                         &middot; Images by
                         <a href="https://www.flickr.com/photos/nasacommons/">NASA on The Commons</a>
-                    </p>
+                    </p>-->
                 </div>
             </div>
         </div>
