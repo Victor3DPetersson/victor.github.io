@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Victor - Code Blog</title>
+        <title>DX11 Engine showcase</title>
         <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
         <!-- Font Awesome icons (free version)-->
         <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -29,7 +29,6 @@
                         <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
                         <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
                         <!--<li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="post.html">Sample Post</a></li>-->
-                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="contact.html">Contact</a></li>
                     </ul>
                 </div>
             </div>
@@ -58,9 +57,9 @@
                         <li><a href="#Particles">Shadow casting mesh particles</a href></li>
                         <li><a href="#Shadows">Shadow atlassing with dynamic and static shadows</a href></li>
                         <li><a href="#Triple">Triple buffered rendering</a href></li>
-                        <li>GPU driven clustered rendering acceleration structure</li>
-                        <li>Render pipeline to multiple render views</li>
-                        <li>Instanced Rendering</li>
+                        <li><a href="#Cluster">GPU driven clustered rendering acceleration structure</a href></li>
+                        <li><a href="#Many_angles">Render pipeline to multiple render views</a href></li>
+                        <li><a href="#Instancing">Instanced rendering</a href></li>
                     </ul> 
                     <p>This engine was written at The Game Assembly. It was written to be useable by other disciplines and for game projects. So there are a lot of things I wish I could have improved.
                         I have put up all the relevant code on
@@ -73,7 +72,7 @@
                     <!-- Header-->
                     <h3  id="GI">Global indirect illumination with spherical harmonics</h3>
 
-                    <a><video class="img-fluid" src="assets/video/GlobalIlluminationSummary.mp4" autoplay controls loop></a>
+                    <a><video class="img-fluid" src="assets/video/DXArticle/GlobalIlluminationSummary.mp4" autoplay controls loop></a>
                     <p>As an artist I have always enjoyed the lighting part of the art process. So for my last project at The Game Assembly. I wanted to push the real time lighting in my groups Engine to be closer to other real-time game engines. Specifically I wanted to look at Global Illumination and to mimic how it is made for games. This was to push my knowledge of the lighting pipeline more in depth and also to understand more advanced lighting techniques.</p>
                     
                     <!-- Sub Header-->
@@ -92,7 +91,7 @@
                     <!-- Header-->
                     <h3  id="Particles">Shadow casting mesh particles</h3>
 
-                    <a><video class="img-fluid" src="assets/video/MeshParticles1.mp4" autoplay controls loop></a>
+                    <a><video class="img-fluid" src="assets/video/DXArticle/MeshParticles1.mp4" autoplay controls loop></a>
                     <!-- Sub Header-->
                     <h5>How it works</h5>
                     <p>The game thread creates particle commands that uses ID's so that the particle manager uses to map the system to a command. Each command will create an emitter instance that references a system. When it comes to updating the emitters I reuse as much data as possible, so it is basically an extension of my isntancing system but over localized clump data.</p>
@@ -114,7 +113,7 @@
                     <!-- Header-->
                     <h3  id="Shadows">Shadow atlassing with dynamic and static shadows</h3>
 
-                    <a><img class="img-fluid" src="assets/img/ShadowAtlas-1536x1536.png"></a>
+                    <a><img class="img-fluid" src="assets/img/DXArticle/ShadowAtlas-1536x1536.png"></a>
                     <!-- Sub Header-->
                     <h5>How it works</h5>
                     <p>For all the shadows in the two last games my group made at The Game Assembly I wrote this shadow atlassing system. It uses one 8192x8192 shadow atlas. The top half is for all the dynamic lights, and the bottom part is for all the static lights.</p>
@@ -128,10 +127,89 @@
                     <!-- Header-->
                     <h3  id="Triple">Triple buffered rendering</h3>
 
-                    <a><img class="img-fluid" src="assets/img/tripleBufferBreakdown-1024x765.png"></a>
+                    <a><img class="img-fluid" src="assets/img/DXArticle/tripleBufferBreakdown-1024x765.png"></a>
+                    <!-- Sub Header-->
+                    <h5>Why triple buffered over double buffering</h5>
+                    <p>The benefit of going with the apporoach of having three buffers instead of two is that you can set the non rendering logic to be in a locked frame rate. Why you would want that is that compared to an ordinary double buffered approach is that the game thread never have to wait for the rendering to sync with the game thread. Also you can put other systems to be updated at different update frequencies, for example you can have a physics simulation at the same framereate as the game of 60FPS but the network can be updated only at 30FPS and a resource thread that runs at 10FPS.</p>
+                    <p>TLDR, triple buffering offers you more control of when to synchronize, it also unlocks the rendering from being dependent on the game thread in any way.</p>
+
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Cluster">Clustered rendering</h3>
+
+                    <a><video class="img-fluid" src="assets/video/DXArticle/ClusterDepth.mp4" autoplay loop></a>
+                    <span class="caption text-muted">Cluster depth spans visualized.</span>
+                    <!-- Sub Header-->
+                    <h5>What is clustered rendering?</h5>
+                    <p>Clustered Rendering is a form of acceleration structure that is meant to make look up of screen resources faster and easier in runtime. What it does is that you divide the rendering cameras frustum up in cells (called clusters), then you check all the resources you want in the cluster against each cluster and fill up the data structure. </p>
+                    <p>So the benefit of using a clustered acceleration structure is that it is much cheaper to light the scene compared to iterate over all the lights for each pixel.</p>
+                    <h5>How I use the cluster</h5>
+                    
+                    <p>What I chose to do for the data structure is that each cluster corresponds to one 3D texture of RGBA16bit int, and one 2D texture that is only a R16bit int. The 3D texture tells me how many of each element I have in each cluster, and the data looks like this:</p>
+                    <p>   <code>
+                        R is Point Light Count<br>
+                        G is Spot Light Count<br>
+                        B is Reflection Probe Count<br>
+                        A is Light Probe Grid Count
+                    </code></p>
+                    <p>The second texture is a 2 dimensional array with all the indices of the scene elements in the 3D texture. When I fill the cluster I dispatch a compute-shader per cluster to do all the collision checks on the GPU.</p>
+                    <p>When rendering all I need to do is to figure out which cluster the pixel belongs to. To do this I calculate the slice from the depth and the X , Y coordinates from the pixels screen coordinate, and then with the zDepth I can reconstruct which zSlice the corresponding pixel belongs too. Once I have the cluster data I need to To access the correct X index in my Index texture, this I get by I flattening the 3D coordinate of the cluster and mapping it to my index texture.</p>
+
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Many_angles">Rendering the world from many cameras</h3>
+
+                    <a><video class="img-fluid" src="assets/video/DXArticle/MultipleRenderViews.mp4" autoplay controls loop></a>
+                    <!-- Sub Header-->
+                    <h5>The pipeline for several rendering targets</h5>
+                    <p>Each unique render view is set up with a command that is controlled from the game thread. This command it contains a Camera, a Texture to Render to, Intermediate Textures associated with the target, as well as a resolution and which render passes to render for the render target.</p>
+                    <p>The main render pipeline does this work each frame: </p>
+                    <ul>
+                        <li>Interpolate the read and last read buffers</li>
+                        <li>Cull the targets that are going to be rendered</li>
+                        <li>Render shadows and update lights</li>
+                        <li>Update particles on a different thread</li>
+                        <li>Render secondary targets</li>
+                        <li>Render primary render target</li>
+                    </ul> 
+                    <p>A secondary render target after the main one is only rendered if it is being used by anything in the main render pipeline view.<br>
+                        What a secondary render target view does is this:</p>
+                    <ul>
+                        <li>Pre frame cleanup</li>
+                        <li>Sort render buffer for target camera</li>
+                        <li>Fill Cluster of camera</li>
+                        <li>Deferred render pass</li>
+                        <li>Forward render pass</li>
+                        <li>Post processing pass</li>
+                        <li>UI pass</li>
+                    </ul> 
+
+
+                    <!--                      Divider                  -->
+                    <hr class="my-4" />
+
+                    <!-- Header-->
+                    <h3  id="Instancing">Instanced rendering</h3>
+
+                    <a><img class="img-fluid" src="assets/img/DXArticle/loa_vista1.jpg"></a>
+                    <span class="caption text-muted">Example of many assets being rendered with instancing.</span>
                     <!-- Sub Header-->
                     <h5>How it works</h5>
-                    <p>.</p>
+                    <ul>
+                        <li>If a model gets loaded all the models get sorted based on size and gets assigned an ID</li>
+                        <li>The game thread fills the render buffer with models through their ID’s and the per instance data</li>
+                        <li>If a model is not unique it is added to a indexed list matching the ID count, if not it is just added as a non instanced render command</li>
+                        <li>The renderer sorts the models based on the material type</li>
+                        <li>Cull each instanced list</li>
+                        <li>Submit the culled list to the GPU render it in one swoop</li>
+                    </ul> 
+
                     <!--<p>
                         Placeholder text by
                         <a href="http://spaceipsum.com/">Space Ipsum</a>
