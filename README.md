@@ -1,3 +1,2 @@
 # victor.github.io
-Code Blog
-Work in progress
+My personal code blog where I will do quick write-ups for my personal and professional projects. 
